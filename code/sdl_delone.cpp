@@ -35,9 +35,6 @@ int main(int ArgumentCount, char** Arguments)
 	vertex Vertices[MAX_POINT_COUNT];
 	int VertexCount = 0;
 
-	vertex V = {20, 20};
-	PushVertex(Vertices, V, &VertexCount);
-
 	while(Running)
 	{
 		// NOTE(hugo) : Event handling
@@ -50,9 +47,18 @@ int main(int ArgumentCount, char** Arguments)
 					{
 						Running = false;
 					} break;
+				case SDL_MOUSEBUTTONDOWN:
+					{
+						if(Event.button.button == SDL_BUTTON_LEFT)
+						{
+							vertex V = {Event.button.x, Event.button.y};
+							PushVertex(Vertices, V, &VertexCount);
+						}
+					} break;
 			}
 		}
 
+		// NOTE(hugo) : Rendering !
 		SDL_SetRenderDrawColor(Renderer, 119, 136, 153, 255);
 		SDL_RenderClear(Renderer);
 		SDL_SetRenderDrawColor(Renderer, 255, 0, 0, 255);
@@ -60,10 +66,10 @@ int main(int ArgumentCount, char** Arguments)
 		for(int VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
 		{
 			SDL_Rect VertexRect;
-			VertexRect.x = Vertices[VertexIndex].x;
-			VertexRect.y = Vertices[VertexIndex].y;
-			VertexRect.w = 3;
-			VertexRect.h = 3;
+			VertexRect.x = Vertices[VertexIndex].x - 2;
+			VertexRect.y = Vertices[VertexIndex].y - 2;
+			VertexRect.w = 5;
+			VertexRect.h = 5;
 			SDL_RenderDrawRect(Renderer, &VertexRect);
 		}
 
