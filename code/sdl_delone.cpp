@@ -2,7 +2,7 @@
 
 #define ArrayCount(x) (sizeof((x))/(sizeof((x)[0])))
 #define Assert(x) do{if(!(x)){*(int*)0=0;}}while(0)
-#define MAX_POINT_COUNT 100
+#define MAX_POINT_COUNT 1000
 
 static bool Running = true;
 
@@ -10,15 +10,59 @@ struct vertex
 {
 	int x;
 	int y;
-
-	int Neighbours[MAX_POINT_COUNT];
-	int NeighbourCount;
+	bool IsFakePoint;
 };
 
-void PushVertex(vertex* Vertices, vertex V, int* VertexCount)
+struct edge
 {
-	Vertices[*VertexCount] = V;
-	(*VertexCount)++;
+	int Vertex0Index;
+	int Vertex1Index;
+};
+
+struct triangle
+{
+	int Edge0Index;
+	int Edge1Index;
+	int Edge2Index;
+};
+
+struct triangulation
+{
+	vertex Vertices[MAX_POINT_COUNT];
+	int VertexCount;
+
+	edge Edges[MAX_POINT_COUNT];
+	int EdgeCount;
+
+	triangle Triangles[MAX_POINT_COUNT];
+	int TriangleCount;
+};
+
+void PushVertex(triangulation* T, vertex V)
+{
+	Assert(T->VertexCount < ArrayCount(T->Vertices));
+	T->Vertices[T->VertexCount] = V;
+	T->VertexCount++;
+}
+
+void PushEdge(triangulation* T, edge E)
+{
+	Assert(T->EdgeCount < ArrayCount(T->Edges));
+	T->Edges[T->EdgeCount] = E;
+	T->EdgeCount++;
+}
+
+void PushTriangle(triangulation* T, triangle F)
+{
+	Assert(T->TriangleCount < ArrayCount(T->Triangles));
+	T->Triangles[T->TriangleCount] = F;
+	T->TriangleCount++;
+}
+
+void ComputeDelaunay(triangulation* T)
+{
+	vertex S = T->Vertices[T->VertexCount];
+	Assert(!S.IsFakePoint);
 }
 
 int main(int ArgumentCount, char** Arguments)
@@ -32,8 +76,27 @@ int main(int ArgumentCount, char** Arguments)
 	Assert(Renderer);
 
 	// NOTE(hugo) : Init graph
-	vertex Vertices[MAX_POINT_COUNT];
-	int VertexCount = 0;
+	triangulation T = {};
+	T.VertexCount = 0;
+	T.EdgeCount = 0;
+	T.TriangleCount = 0;
+
+	vertex FakePoint0 = {-10, -100, true};
+	vertex FakePoint1 = {-10, 5000, true};
+	vertex FakePoint2 = {5000, 5000, true};
+	edge E01 = {0, 1};
+	edge E12 = {1, 2};
+	edge E20 = {2, 0};
+	triangle F = {0, 1, 2};
+	PushVertex(&T, FakePoint0);
+	PushVertex(&T, FakePoint1);
+	PushVertex(&T, FakePoint2);
+	PushEdge(&T, E01);
+	PushEdge(&T, E12);
+	PushEdge(&T, E20);
+	PushTriangle(&T, F);
+
+	bool DirtyTriangulation = false;
 
 	while(Running)
 	{
@@ -51,26 +114,49 @@ int main(int ArgumentCount, char** Arguments)
 					{
 						if(Event.button.button == SDL_BUTTON_LEFT)
 						{
-							vertex V = {Event.button.x, Event.button.y};
-							PushVertex(Vertices, V, &VertexCount);
+							vertex V = {Event.button.x, Event.button.y, false};
+							PushVertex(&T, V);
+							DirtyTriangulation = true;
 						}
 					} break;
 			}
 		}
 
+		// NOTE(hugo) : Triangulation processing
+		if(DirtyTriangulation)
+		{
+			ComputeDelaunay(&T);
+			DirtyTriangulation = false;
+		}
+
 		// NOTE(hugo) : Rendering !
 		SDL_SetRenderDrawColor(Renderer, 119, 136, 153, 255);
 		SDL_RenderClear(Renderer);
-		SDL_SetRenderDrawColor(Renderer, 255, 0, 0, 255);
+		SDL_SetRenderDrawColor(Renderer, 20, 20, 20, 255);
 
-		for(int VertexIndex = 0; VertexIndex < VertexCount; ++VertexIndex)
+		for(int VertexIndex = 0; VertexIndex < T.VertexCount; ++VertexIndex)
 		{
-			SDL_Rect VertexRect;
-			VertexRect.x = Vertices[VertexIndex].x - 2;
-			VertexRect.y = Vertices[VertexIndex].y - 2;
-			VertexRect.w = 5;
-			VertexRect.h = 5;
-			SDL_RenderDrawRect(Renderer, &VertexRect);
+			vertex V = T.Vertices[VertexIndex];
+			if(!V.IsFakePoint)
+			{
+				SDL_Rect VertexRect;
+				VertexRect.x = V.x - 2;
+				VertexRect.y = V.y - 2;
+				VertexRect.w = 5;
+				VertexRect.h = 5;
+				SDL_RenderDrawRect(Renderer, &VertexRect);
+			}
+		}
+
+		for(int EdgeIndex = 0; EdgeIndex < T.EdgeCount; ++EdgeIndex)
+		{
+			edge E = T.Edges[EdgeIndex];
+			vertex V = T.Vertices[E.Vertex0Index];
+			vertex W = T.Vertices[E.Vertex1Index];
+			if((!V.IsFakePoint) && (!W.IsFakePoint))
+			{
+				SDL_RenderDrawLine(Renderer, V.x, V.y, W.x, W.y);
+			}
 		}
 
 		SDL_RenderPresent(Renderer);
