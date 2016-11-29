@@ -5,6 +5,17 @@
 #define Assert(x) do{if(!(x)){*(int*)0=0;}}while(0)
 #define MAX_POINT_COUNT 1000
 
+/*
+ * TODO(hugo)
+ *   - make the program robust 
+ *		+ no Assert popping
+ *		+ handling degenerate cases (3 vertices on one line, 4 vertices on one circle)
+ *		+ disabling edge flip osscilation (rare but can happen)
+ *	 - improve the algorithm (real incremental, not naive incremental)
+ *	 - clean the render stuff I did for debugging purposes
+ *	 - consider improving the data structure for effiency purposes
+ */
+
 static bool Running = true;
 static int ScreenWidth = 600;
 static int ScreenHeight = 600;
@@ -754,9 +765,10 @@ int main(int ArgumentCount, char** Arguments)
 	T.EdgeCount = 0;
 	T.TriangleCount = 0;
 
-	vertex FakePoint0 = {-10, ScreenHeight - (-1500), false};
-	vertex FakePoint1 = {-10, ScreenHeight - 1500, false};
-	vertex FakePoint2 = {1500, ScreenHeight - 1500, false};
+	int FarAwayCoordinate = 8000;
+	vertex FakePoint0 = {-100, ScreenHeight - (-FarAwayCoordinate), false};
+	vertex FakePoint1 = {-100, ScreenHeight - FarAwayCoordinate, false};
+	vertex FakePoint2 = {FarAwayCoordinate, ScreenHeight - FarAwayCoordinate, false};
 	edge E01 = {0, 1};
 	edge E12 = {1, 2};
 	edge E20 = {2, 0};
