@@ -477,20 +477,23 @@ bool IsDelaunay(triangulation* T, int TriangleIndex)
 
 	for(int VertexIndex = 0; VertexIndex < T->VertexCount; ++VertexIndex)
 	{
-		if((VertexIndex !=  F.Vertex0Index) && (VertexIndex != F.Vertex1Index) && (VertexIndex != F.Vertex2Index))
+		vertex D = T->Vertices[VertexIndex];
+		if(D.IsRealPoint)
 		{
-			vertex D = T->Vertices[VertexIndex];
-
-			SetValue(&M, 3, 0, D.x);
-			SetValue(&M, 3, 1, D.y);
-			SetValue(&M, 3, 2, D.x * D.x + D.y * D.y);
-			SetValue(&M, 3, 3, 1);
-
-			float Determinant = Det(M);
-			if(Determinant > 0)
+			if((VertexIndex !=  F.Vertex0Index) && (VertexIndex != F.Vertex1Index) && (VertexIndex != F.Vertex2Index))
 			{
-				// TODO(hugo) : There is a big optim to be done. If we found the vertex that is inside the circle, we directly have the other triangle that we need to flip the edge with.
-				return(false);
+
+				SetValue(&M, 3, 0, D.x);
+				SetValue(&M, 3, 1, D.y);
+				SetValue(&M, 3, 2, D.x * D.x + D.y * D.y);
+				SetValue(&M, 3, 3, 1);
+
+				float Determinant = Det(M);
+				if(Determinant > 0)
+				{
+					// TODO(hugo) : There is a big optim to be done. If we found the vertex that is inside the circle, we directly have the other triangle that we need to flip the edge with.
+					return(false);
+				}
 			}
 		}
 	}
